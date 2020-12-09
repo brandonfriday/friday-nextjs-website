@@ -5,12 +5,13 @@ import { pageToolbarDocs } from 'utils/prismicToolbarQueries';
 import useUpdatePreviewRef from 'utils/hooks/useUpdatePreviewRef';
 import useUpdateToolbarDocs from 'utils/hooks/useUpdateToolbarDocs';
 import { Layout, SliceZone } from 'components';
-import { getDocuments } from '../lib/getDocuments';
+import { getDocument } from '../lib/getDocument';
+import { RichText } from 'prismic-reactjs';
 
 /**
  * posts component
  */
-const Page = ({ doc, menu, lang, preview }) => {
+const Page = ({ doc, menu, lang, preview, graphQLDoc }) => {
   if (doc && doc.data) {
     useUpdatePreviewRef(preview, doc.id);
     useUpdateToolbarDocs(
@@ -25,6 +26,7 @@ const Page = ({ doc, menu, lang, preview }) => {
         menu={menu}
         isPreview={preview.isActive}
       >
+        <h1>{RichText.render(graphQLDoc.display_title)}</h1>
         <SliceZone sliceZone={doc.data.body} />
       </Layout>
     );
@@ -41,6 +43,8 @@ export async function getStaticProps({
   const ref = previewData ? previewData.ref : null;
   const isPreview = preview || false;
   const client = Client();
+  const graphQLDoc = await getDocument('page', locale, params.uid, ref);
+  console.log('🚀 ~ file: [uid].js ~ line 45 ~ graphQLDoc', graphQLDoc);
   const doc =
     (await client.getByUID(
       'page',
@@ -59,6 +63,7 @@ export async function getStaticProps({
     props: {
       menu,
       doc,
+      graphQLDoc,
       preview: {
         isActive: isPreview,
         activeRef: ref,
@@ -68,16 +73,11 @@ export async function getStaticProps({
         isMyMainLanguage,
       },
     },
+    revalidate: 1,
   };
 }
 
 export async function getStaticPaths() {
-  const graphQLDocuments = await getDocuments('page', 'en-us');
-  console.log(
-    '🚀 ~ file: [uid].js ~ line 76 ~ getStaticPaths ~ graphQLDocuments',
-    graphQLDocuments
-  );
-
   const documents = await queryRepeatableDocuments(
     (doc) => doc.type === 'page'
   );
