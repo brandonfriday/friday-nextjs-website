@@ -1,21 +1,24 @@
 import React from 'react';
 import { queryRepeatableDocuments } from 'utils/queries';
 import { Client, manageLocal } from 'utils/prismicHelpers';
-import { pageToolbarDocs } from 'utils/prismicToolbarQueries'
+import { pageToolbarDocs } from 'utils/prismicToolbarQueries';
 import useUpdatePreviewRef from 'utils/hooks/useUpdatePreviewRef';
 import useUpdateToolbarDocs from 'utils/hooks/useUpdateToolbarDocs';
 import { Layout, SliceZone } from 'components';
+import { getDocument } from '../lib/getDocument';
+import { RichText } from 'prismic-reactjs';
 
 /**
  * posts component
  */
-const Page = ({ doc, menu, lang, preview }) => {
-
+const Page = ({ doc, menu, lang, preview, graphQLDoc }) => {
   if (doc && doc.data) {
+    useUpdatePreviewRef(preview, doc.id);
+    useUpdateToolbarDocs(
+      pageToolbarDocs(doc.uid, preview.activeRef, doc.lang),
+      [doc]
+    );
 
-    useUpdatePreviewRef(preview, doc.id)
-    useUpdateToolbarDocs(pageToolbarDocs(doc.uid, preview.activeRef, doc.lang), [doc])
-   
     return (
       <Layout
         altLangs={doc.alternate_languages}
@@ -23,6 +26,7 @@ const Page = ({ doc, menu, lang, preview }) => {
         menu={menu}
         isPreview={preview.isActive}
       >
+        <h1>{RichText.render(graphQLDoc.display_title)}</h1>
         <SliceZone sliceZone={doc.data.body} />
       </Layout>
     );
@@ -30,15 +34,16 @@ const Page = ({ doc, menu, lang, preview }) => {
 };
 
 export async function getStaticProps({
-  preview, 
+  preview,
   previewData,
   params,
   locale,
   locales,
 }) {
-  const ref = previewData ? previewData.ref : null
-  const isPreview = preview || false
+  const ref = previewData ? previewData.ref : null;
+  const isPreview = preview || false;
   const client = Client();
+  const graphQLDoc = await getDocument('page', locale, params.uid, ref);
   const doc =
     (await client.getByUID(
       'page',
@@ -46,24 +51,28 @@ export async function getStaticProps({
       ref ? { ref, lang: locale } : { lang: locale }
     )) || {};
   const menu =
-    (await client.getSingle('top_menu', ref ? { ref, lang: locale } : { lang: locale })) ||
-    {};
+    (await client.getSingle(
+      'top_menu',
+      ref ? { ref, lang: locale } : { lang: locale }
+    )) || {};
 
-  const { currentLang, isMyMainLanguage } = manageLocal(locales, locale)
+  const { currentLang, isMyMainLanguage } = manageLocal(locales, locale);
 
   return {
     props: {
       menu,
       doc,
+      graphQLDoc,
       preview: {
         isActive: isPreview,
         activeRef: ref,
       },
-      lang:{
+      lang: {
         currentLang,
         isMyMainLanguage,
-      }
+      },
     },
+    revalidate: 1,
   };
 }
 
