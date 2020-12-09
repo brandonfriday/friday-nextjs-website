@@ -1,21 +1,23 @@
 import React from 'react';
 import { queryRepeatableDocuments } from 'utils/queries';
 import { Client, manageLocal } from 'utils/prismicHelpers';
-import { pageToolbarDocs } from 'utils/prismicToolbarQueries'
+import { pageToolbarDocs } from 'utils/prismicToolbarQueries';
 import useUpdatePreviewRef from 'utils/hooks/useUpdatePreviewRef';
 import useUpdateToolbarDocs from 'utils/hooks/useUpdateToolbarDocs';
 import { Layout, SliceZone } from 'components';
+import { getDocuments } from '../lib/getDocuments';
 
 /**
  * posts component
  */
 const Page = ({ doc, menu, lang, preview }) => {
-
   if (doc && doc.data) {
+    useUpdatePreviewRef(preview, doc.id);
+    useUpdateToolbarDocs(
+      pageToolbarDocs(doc.uid, preview.activeRef, doc.lang),
+      [doc]
+    );
 
-    useUpdatePreviewRef(preview, doc.id)
-    useUpdateToolbarDocs(pageToolbarDocs(doc.uid, preview.activeRef, doc.lang), [doc])
-   
     return (
       <Layout
         altLangs={doc.alternate_languages}
@@ -30,14 +32,14 @@ const Page = ({ doc, menu, lang, preview }) => {
 };
 
 export async function getStaticProps({
-  preview, 
+  preview,
   previewData,
   params,
   locale,
   locales,
 }) {
-  const ref = previewData ? previewData.ref : null
-  const isPreview = preview || false
+  const ref = previewData ? previewData.ref : null;
+  const isPreview = preview || false;
   const client = Client();
   const doc =
     (await client.getByUID(
@@ -46,10 +48,12 @@ export async function getStaticProps({
       ref ? { ref, lang: locale } : { lang: locale }
     )) || {};
   const menu =
-    (await client.getSingle('top_menu', ref ? { ref, lang: locale } : { lang: locale })) ||
-    {};
+    (await client.getSingle(
+      'top_menu',
+      ref ? { ref, lang: locale } : { lang: locale }
+    )) || {};
 
-  const { currentLang, isMyMainLanguage } = manageLocal(locales, locale)
+  const { currentLang, isMyMainLanguage } = manageLocal(locales, locale);
 
   return {
     props: {
@@ -59,15 +63,21 @@ export async function getStaticProps({
         isActive: isPreview,
         activeRef: ref,
       },
-      lang:{
+      lang: {
         currentLang,
         isMyMainLanguage,
-      }
+      },
     },
   };
 }
 
 export async function getStaticPaths() {
+  const graphQLDocuments = await getDocuments('page', 'en-us');
+  console.log(
+    '🚀 ~ file: [uid].js ~ line 76 ~ getStaticPaths ~ graphQLDocuments',
+    graphQLDocuments
+  );
+
   const documents = await queryRepeatableDocuments(
     (doc) => doc.type === 'page'
   );

@@ -8,7 +8,9 @@ import {
 } from 'prismic-configuration';
 
 // Helper function to get the Prismic repository name from the URL
-export const [, prismicRepoName] = apiEndpoint.match(/https?:\/\/([^.]+)?\.(cdn\.)?.+/);
+export const [, prismicRepoName] = apiEndpoint.match(
+  /https?:\/\/([^.]+)?\.(cdn\.)?.+/
+);
 
 // Helper function to convert Prismic Rich Text links to Next/Link components
 export const customLink = (type, element, content) => (
@@ -37,14 +39,13 @@ const createClientOptions = (req = null, prismicAccessToken = null) => {
   };
 };
 
-
 export const manageLocal = (Locales, locale) => {
   // Languages from API response
-// // Setting Master language as default language option
-const mainLanguage = Locales[0];
-// // Sets current language based on the locale
-const currentLang = locale !== undefined ? locale : mainLanguage;
-const isMyMainLanguage = mainLanguage === currentLang;
+  // // Setting Master language as default language option
+  const mainLanguage = Locales[0];
+  // // Sets current language based on the locale
+  const currentLang = locale !== undefined ? locale : mainLanguage;
+  const isMyMainLanguage = mainLanguage === currentLang;
 
-return { mainLanguage, currentLang, isMyMainLanguage }
-}
+  return { mainLanguage, currentLang, isMyMainLanguage };
+};
