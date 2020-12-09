@@ -41,7 +41,6 @@ export async function getStaticProps({
   const isPreview = preview || false;
   const client = Client();
   const graphQLDoc = (await getDocuments('homepage', locale, ref))[0];
-  console.log('🚀 ~ file: index.js ~ line 44 ~ graphQLDoc', graphQLDoc);
 
   const doc =
     (await client.getSingle(
